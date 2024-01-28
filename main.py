@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib import response
 from flask import Flask, jsonify, redirect, request, session
 from flask_cors import CORS, cross_origin
@@ -8,7 +8,19 @@ import urllib.parse
 
 app = Flask(__name__)
 app.secret_key = 'super_secret_key'
-CORS(app, supports_credentials=True)  # Enable CORS globally with support for credentials
+CORS(app, supports_credentials=True, origins=["http://localhost:5173"])  # Enable CORS globally with support for credentials  ,origins=["http://127.0.0.1:8080", "http://127.0.0.1:5173"],
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = 'super_secret_key'
+app.config['SESSION_COOKIE_NAME'] = 'my_session_cookie'
+app.config['SESSION_COOKIE_DOMAIN'] = '.localhost'
+app.config['SESSION_COOKIE_PATH'] = '/'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # or 'None' if using HTTPS
+
+
 
 
 CLIENT_ID  = "5421c67558764234b64af44be192c28b"
@@ -58,10 +70,14 @@ def callback():
         session['refresh_token'] = token_info['refresh_token']
         session['expires_at'] =datetime.now().timestamp() + token_info['expires_in']
 
-        # return redirect('/playlists')
-        return redirect('http://127.0.0.1:5173/dashboard')
+        print("Access Token print line 61: "+session['access_token'])
+
+        #return redirect('/playlists')
+        #return redirect('http://127.0.0.1:5173/dashboard')
+    return redirect('http://localhost:5173/dashboard')
 
 @app.route('/playlists')
+@cross_origin(origin='localhost', headers=['Content-Type', 'Authorization'], supports_credentials=True)
 def get_playlists():
     if 'access_token' not in session:
         return redirect('/login')
@@ -77,6 +93,11 @@ def get_playlists():
     playlists = response.json()
 
     return jsonify(playlists)
+
+@app.route('/hello-world')
+@cross_origin(origin='localhost', headers=['Content-Type', 'Authorization'], supports_credentials=True)
+def hello_world():
+    return "Hello World"
 
 @app.route('/refresh-token')
 def refresh_token():
@@ -100,4 +121,4 @@ def refresh_token():
         return redirect('/playlists')
 
 if __name__== '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(host='localhost', port=8080, debug=True)
